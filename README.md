@@ -1,6 +1,13 @@
 # Virtual Ram File System Kernel written in C
 A Linux kernel module providing a fully in-memory virtual filesystem for high-performance file management and OS-level experimentation <br/>
 
+# Compile
+- `make` <br/>
+- `sudo insmod vfs.ko` <br/>
+- `dmesg | tail -n 20` for logs <br/>
+- `sudo rmmod vfs.ko` <br/>
+- `make clean` <br/>
+
 # Features
 Create, read, write, and delete files in RAM <br/>
 Memory-backed storage with dynamic allocation <br/>
