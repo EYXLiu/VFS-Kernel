@@ -288,13 +288,13 @@ static int __init vfs_init(void) {
 	proc_dir = proc_mkdir("ramvfs", NULL);
 	if (!proc_dir) {
 		printk(KERN_ALERT "vfs: Failed to create /proc/ramvfs\n");
-		//return -ENOMEM;
+		return -ENOMEM;
 	}
 
 	proc_entry = proc_create(PROC_NAME, 0444, NULL, &vfs_proc_ops);
 	if (!proc_entry) {
 		printk(KERN_ALERT "vfs: Failed to create /proc/%s\n", PROC_NAME);
-    		//return -ENOMEM;
+    		return -ENOMEM;
 	}
 	printk(KERN_INFO "vfs: /proc/%s created\n", PROC_NAME);
 	proc_mem_entry = proc_create(PROC_MEM_NAME, 0444, proc_dir, &vfs_mem_ops);
