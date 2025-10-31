@@ -29,6 +29,8 @@ struct ramfile {
 
 static struct ramfile fs[MAX_FILES];
 
+static struct proc_dir_entry *proc_dir;
+
 // Create proc endpoint for each file
 static ssize_t file_proc_read(struct file *file, char __user *buf, size_t count, loff_t *ppos) {
     struct ramfile *f = pde_data(file_inode(file));
@@ -79,7 +81,7 @@ static int ramvfs_create(const char* name) {
 			fs[i].data = kmalloc(MAX_FILE_SIZE, GFP_KERNEL);
 			fs[i].size = 0;
 			fs[i].used = true;
-			fs[i].proc_entry = proc_create_data(fs[i].name, 0444, NULL, &file_proc_ops, &fs[i]);
+			fs[i].proc_entry = proc_create_data(fs[i].name, 0444, proc_dir, &file_proc_ops, &fs[i]);
 			if (!fs[i].proc_entry) {
 				kfree(fs[i].data);
 				fs[i].used = false;
@@ -142,8 +144,6 @@ static void ramvfs_delete(int index) {
 // O------------------------------------------------------------------------------O
 // | Proc user interface                                                          |
 // O------------------------------------------------------------------------------O
-
-static struct proc_dir_entry *proc_dir;
 
 static struct proc_dir_entry *proc_entry;
 static struct proc_dir_entry *proc_mem_entry;
@@ -285,22 +285,22 @@ static int __init vfs_init(void) {
 	printk(KERN_INFO "vfs: Initialized RAM filesystem with %d slots\n", MAX_FILES);
 
 	//proc init 
-	proc_dir = proc_mkdir("vfs", NULL);
-    if (!proc_dir) {
-        printk(KERN_ALERT "vfs: Failed to create /proc/vfs\n");
-        return -ENOMEM;
-    }
+	proc_dir = proc_mkdir("ramvfs", NULL);
+	if (!proc_dir) {
+		printk(KERN_ALERT "vfs: Failed to create /proc/ramvfs\n");
+		//return -ENOMEM;
+	}
 
 	proc_entry = proc_create(PROC_NAME, 0444, NULL, &vfs_proc_ops);
 	if (!proc_entry) {
 		printk(KERN_ALERT "vfs: Failed to create /proc/%s\n", PROC_NAME);
-    	return -ENOMEM;
+    		//return -ENOMEM;
 	}
 	printk(KERN_INFO "vfs: /proc/%s created\n", PROC_NAME);
-	proc_mem_entry = proc_create(PROC_MEM_NAME, 0444, NULL, &vfs_mem_ops);
+	proc_mem_entry = proc_create(PROC_MEM_NAME, 0444, proc_dir, &vfs_mem_ops);
 	if (!proc_mem_entry) {
 		printk(KERN_ALERT "vfs: Failed to create /proc/%s\n", PROC_MEM_NAME);
-    	return -ENOMEM;
+    		return -ENOMEM;
 	}
 	printk(KERN_INFO "vfs: /proc/%s created\n", PROC_MEM_NAME);
 
@@ -308,29 +308,29 @@ static int __init vfs_init(void) {
 	ramvfs_kobj = kobject_create_and_add(SYS_NAME, kernel_kobj);
 	if (!ramvfs_kobj) {
 		printk(KERN_ALERT "vfs: Failed to create /sys/%s\n", SYS_NAME);
-    	return -ENOMEM;
+    		return -ENOMEM;
 	}
 	sys_ret = sysfs_create_file(ramvfs_kobj, &num_files_attr.attr);
 	if (sys_ret) {
 		printk(KERN_ALERT "vfs: Failed to create /sys/%s/num_files\n", SYS_NAME);
-    	return -ENOMEM;
+    		return -ENOMEM;
 	}
-    printk(KERN_INFO "vfs: /sys/%s/num_files attribute created\n", SYS_NAME);
+	printk(KERN_INFO "vfs: /sys/%s/num_files attribute created\n", SYS_NAME);
 
 	sys_ret = sysfs_create_file(ramvfs_kobj, &max_files_attr.attr);
 	if (sys_ret) {
 		printk(KERN_ALERT "vfs: Failed to create /sys/%s/max_files\n", SYS_NAME);
-    	return -ENOMEM;
+    		return -ENOMEM;
 	}
-    printk(KERN_INFO "vfs: /sys/%s/num_files attribute created\n", SYS_NAME);
+	printk(KERN_INFO "vfs: /sys/%s/num_files attribute created\n", SYS_NAME);
 
 	//test file creation
 	id = ramvfs_create("hello.txt");
-    if (id >= 0) {
-        ramvfs_write(id, "Hello, kernel world!", 20);
-        ramvfs_read(id, read_buf, 20);
-        printk(KERN_INFO "ramvfs: Read data = '%s'\n", read_buf);
-    }
+	if (id >= 0) {
+        	ramvfs_write(id, "Hello, kernel world!", 20);
+        	ramvfs_read(id, read_buf, 20);
+        	printk(KERN_INFO "vfs: Read data = '%s'\n", read_buf);
+	}
 
 	id2 = ramvfs_create("hello2.txt");
 	ramvfs_delete(id2);
@@ -350,6 +350,7 @@ static void __exit vfs_exit(void) {
 	printk(KERN_INFO "vfs: /proc/%s removed\n", PROC_NAME);
 	proc_remove(proc_mem_entry);
 	printk(KERN_INFO "vfs: /proc/%s removed\n", PROC_MEM_NAME);
+	remove_proc_entry("ramvfs", NULL);
 
 	kobject_put(ramvfs_kobj);
 	kobject_put(ramvfs_max_kobj);
