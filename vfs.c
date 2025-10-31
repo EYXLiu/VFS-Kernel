@@ -327,7 +327,7 @@ static int __init vfs_init(void) {
 	//test file creation
 	id = ramvfs_create("hello.txt");
 	if (id >= 0) {
-        	ramvfs_write(id, "Hello, kernel world!", 20);
+        	ramvfs_write(id, "Hello, world!", 20);
         	ramvfs_read(id, read_buf, 20);
         	printk(KERN_INFO "vfs: Read data = '%s'\n", read_buf);
 	}
