@@ -24,3 +24,7 @@ Concurrency (if multiple terminals are connected and want to read/write to the f
 Scalability (hard limit of 10 files, should be dynamic) <br/>
 Persistence (files are stored only on RAM, could be written to SD card) <br/>
 Advanced features (no directories that would make it similar to a real file storage) <br/>
+
+# Linux notes
+`sudo chown -R pi:pi <foldername>` <br/>
+`sudo chmod -R u+rwX <foldername>`
